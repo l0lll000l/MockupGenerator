@@ -74,7 +74,7 @@ jobs:
           architecture: x64
       - name: Build Flutter app
         # run: flutter build web --web-renderer html --release
-      - run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi
       # - run: |
       #     flutter build ios --no-codesign
       #     cd build/ios/iphoneos
