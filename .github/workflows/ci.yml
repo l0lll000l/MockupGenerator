@@ -32,7 +32,8 @@ jobs:
           architecture: x64
 
       - name: Build Flutter app (Android)
-        run: flutter build apk --release --split-per-abi
+        # run: flutter build apk --release --split-per-abi
+        run: flutter build apk --target-platform android-arm64 --split-debug-info --shrink --obfuscate --dart-define=BUILD_MODE=release
 
       # Uncomment and modify the following steps if you want to build for iOS as well
       # - name: Build Flutter app (iOS)
