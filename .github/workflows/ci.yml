@@ -1,55 +1,62 @@
-name: "Build & Release"
+name: Flutter CI/CD
 
 on:
-  pull_request:
-    branches:
-      - main
-      - master
   push:
     branches:
       - main
-      - master
-      - develop
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
-    name: Build & Release
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        flutter: [stable, beta]
 
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: "zulu"
-          java-version: "17"
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: "stable"
-          architecture: x64
+          channel: ${{ matrix.flutter }}
 
-      - name: Build Flutter app (Android)
-        # run: flutter build apk --release --split-per-abi
-        run: flutter build apk --target-platform android-arm64 --split-debug-info --shrink --obfuscate --dart-define=BUILD_MODE=release
+      - name: Install dependencies
+        run: flutter pub get
 
-      # Uncomment and modify the following steps if you want to build for iOS as well
-      # - name: Build Flutter app (iOS)
-      #   run: |
-      #     flutter build ios --no-codesign
-      #     cd build/ios/iphoneos
-      #     mkdir Payload
-      #     cd Payload
-      #     ln -s ../Runner.app
-      #     cd ..
-      #     zip -r app.ipa Payload
+      - name: Run tests
+        run: flutter test
 
-      - name: Push to Releases
-        uses: ncipollo/release-action@v1
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v2
         with:
-          artifacts: "build/app/outputs/apk/release/*.apk" # Ensure the correct path to your APK files
-          # artifacts: "build/web/*"  # Uncomment if building for web
-          tag: v1.0.${{ github.run_number }}
-          token: ${{ secrets.TOKEN }} # Use the correct secret token name
+          name: flutter-app
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Download APK
+        uses: actions/download-artifact@v2
+        with:
+          name: flutter-app
+          path: build/app/outputs/flutter-apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
