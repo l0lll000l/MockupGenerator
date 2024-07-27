@@ -1,3 +1,66 @@
+# name: Flutter CI/CD
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
+
+# jobs:
+#   build:
+
+#     runs-on: ubuntu-latest
+
+#     strategy:
+#       matrix:
+#         flutter: [stable, beta]
+
+#     steps:
+#     - name: Checkout repository
+#       uses: actions/checkout@v2
+
+#     - name: Set up Flutter
+#       uses: subosito/flutter-action@v2
+#       with:
+#         channel: ${{ matrix.flutter }}
+
+#     - name: Install dependencies
+#       run: flutter pub get
+
+#     - name: Run tests
+#       run: flutter test
+
+#     - name: Build APK
+#       run: flutter build apk --release
+
+#     - name: Upload APK
+#       uses: actions/upload-artifact@v2
+#       with:
+#         name: flutter-app
+#         path: build/app/outputs/flutter-apk/app-release.apk
+
+#   release:
+#     needs: build
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: Checkout repository
+#       uses: actions/checkout@v2
+
+#     - name: Download APK
+#       uses: actions/download-artifact@v2
+#       with:
+#         name: flutter-app
+#         path: build/app/outputs/flutter-apk
+
+#     - name: Create GitHub Release
+#       uses: softprops/action-gh-release@v1
+#       with:
+#         files: build/app/outputs/flutter-apk/app-release.apk
+#       env:
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 name: Flutter CI/CD
 
 on:
@@ -34,11 +97,20 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
+      - name: Build AAB
+        run: flutter build appbundle --release
+
       - name: Upload APK
         uses: actions/upload-artifact@v2
         with:
-          name: flutter-app
+          name: flutter-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v2
+        with:
+          name: flutter-aab
+          path: build/app/outputs/bundle/release/app-release.aab
 
   release:
     needs: build
@@ -51,12 +123,20 @@ jobs:
       - name: Download APK
         uses: actions/download-artifact@v2
         with:
-          name: flutter-app
+          name: flutter-apk
           path: build/app/outputs/flutter-apk
+
+      - name: Download AAB
+        uses: actions/download-artifact@v2
+        with:
+          name: flutter-aab
+          path: build/app/outputs/bundle/release
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
